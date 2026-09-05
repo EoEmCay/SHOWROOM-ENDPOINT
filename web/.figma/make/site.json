@@ -1,0 +1,11 @@
+{
+  "title": "K&T Showroom",
+  "description": "K&T Showroom - nền tảng cho thuê và mua bán xe: danh mục xe đa dạng, hợp đồng điện tử có chữ ký số, xử lý đặt cọc an toàn.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

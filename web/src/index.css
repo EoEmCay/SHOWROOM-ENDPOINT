@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-neon-red: #ff003c;
+  --color-neon-red-light: #ff3366;
+  --color-neon-red-dark: #cc0030;
+  --color-surface: #ffffff;
+  --color-card: #f8f9fa;
+  --color-border: #e5e7eb;
+  --font-display: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Tailwind v4 bỏ con trỏ pointer mặc định cho nút — khôi phục lại để người
+   dùng biết chỗ nào bấm được. Đặt trong @layer base để class cursor-* của
+   Tailwind (vd disabled:cursor-not-allowed) vẫn ghi đè được. */
+@layer base {
+  button,
+  [role="button"],
+  select,
+  summary,
+  a[href],
+  label[for] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #ffffff;
+  color: #111111;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff003c;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-neon-red {
+  color: #ff003c;
+  text-shadow: 0 0 8px rgba(255, 0, 60, 0.4);
+}
+
+.bg-neon-red {
+  background-color: #ff003c;
+  box-shadow: 0 0 15px rgba(255, 0, 60, 0.5);
+}
+
+.border-neon-red {
+  border-color: #ff003c;
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.3);
+}
+
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}

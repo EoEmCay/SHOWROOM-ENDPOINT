@@ -1,0 +1,475 @@
+========================================================================
+TÀI LIỆU TỔNG QUAN DỰ ÁN: WEBSITE THUÊ XE (K&T SHOWROOM)
+========================================================================
+
+
+1. GIỚI THIỆU CHUNG
+========================================================================
+
+Đây là đồ án xây dựng website cho thuê xe (ô tô và xe máy) trực tuyến,
+cho phép khách hàng tìm kiếm xe, đặt lịch lái thử, thuê xe trực tuyến,
+theo dõi đơn thuê của mình; đồng thời cho phép quản trị viên quản lý
+xe, đơn thuê và thanh toán.
+
+Công nghệ sử dụng:
+
+- Frontend: React 19 + Vite 8 + TypeScript + Tailwind CSS v4
+- Backend: PHP (dùng PDO) chạy bằng PHP built-in server, đóng vai trò
+  API cho frontend gọi qua đường dẫn /api
+- Cơ sở dữ liệu: MySQL (XAMPP), tên database "ql thuexe"
+- Vite được cấu hình proxy "/api" sang "http://localhost:8000" (nơi
+  chạy PHP server)
+
+Các bảng chính trong cơ sở dữ liệu (theo file ql_thuexe.sql):
+
+- nguoidung        : tài khoản người dùng/khách hàng (có cột VAITRO để
+                      phân biệt vai trò, ví dụ "khach" hoặc "admin")
+- xe                : danh sách xe cho thuê (ô tô/xe máy)
+- datxe             : đơn đặt/thuê xe
+- chitietdv         : chi tiết các dịch vụ đi kèm trong một đơn thuê
+- dichvu            : danh mục dịch vụ bổ sung (ví dụ: bảo hiểm, giao xe...)
+- thanhtoan         : thông tin thanh toán của từng đơn thuê
+- lichlaithu        : lịch đăng ký lái thử xe
+- lotrinhxe         : lộ trình di chuyển của xe
+- don_thue          : bảng dữ liệu cũ, không còn được API sử dụng
+
+
+2. PHÂN QUYỀN / CÁC TÁC NHÂN (ACTORS) TRONG HỆ THỐNG
+========================================================================
+
+Theo sơ đồ use case (usecase ql thuê xe.oom), hệ thống có 3 tác nhân
+(actor) chính:
+
+--------------------------------
+2.1. NGƯỜI DÙNG (khách hàng)
+--------------------------------
+Là người truy cập website để tìm và thuê xe. Vai trò tương ứng trong
+cơ sở dữ liệu là "khach". Các chức năng mà Người dùng được thực hiện:
+
+  - Đăng kí
+  - Đăng nhập
+  - Tìm kiếm (xe)
+  - Đặt lịch lái thử
+  - Thuê xe trực tuyến
+  - Xem Đơn thuê của tôi
+
+--------------------------------
+2.2. HỆ THỐNG (quản trị viên / admin)
+--------------------------------
+Là actor đại diện cho vai trò quản trị viên, vận hành và quản lý toàn
+bộ hệ thống phía sau. Vai trò tương ứng trong cơ sở dữ liệu là "admin".
+Các chức năng mà Hệ thống (quản trị) đảm nhiệm:
+
+  - Quản lý tài khoản
+  - Quản lý xe
+  - Quản lý đặt xe
+  - Quản lý thanh toán
+  - Quản lý khuyến mãi
+  - Quản trị hệ thống
+  - Quản lý đơn thuê
+
+--------------------------------
+2.3. CỔNG THANH TOÁN (actor bên ngoài)
+--------------------------------
+Là hệ thống/đối tác thanh toán bên ngoài, tham gia vào use case:
+
+  - Thanh toán
+
+
+3. DANH SÁCH USE CASE CHI TIẾT (usecase ql thuê xe.oom)
+========================================================================
+
+--------------------------------
+3.1. Nhóm use case của NGƯỜI DÙNG
+--------------------------------
+
+* Đăng kí
+* Đăng nhập
+* Tìm kiếm
+
+* Đặt lịch lái thử
+
+* Xem Đơn thuê của tôi
+    (mở rộng - extend - bởi 3 use case con):
+      - Xem đơn thuê
+      - Theo dõi trạng thái
+      - Hủy đơn thuê
+
+* Thuê xe trực tuyến
+    (bao gồm - include - 4 use case con, tức là để thực hiện
+     "Thuê xe trực tuyến" thì bắt buộc phải thực hiện các bước sau):
+      - Chọn xe
+      - Nhập thông tin thuê xe
+      - Chọn gói dịch vụ (nếu có)
+      - Thanh toán
+
+--------------------------------
+3.2. Nhóm use case của HỆ THỐNG (quản trị)
+--------------------------------
+
+* Quản lý tài khoản
+* Quản lý xe
+* Quản lý đặt xe
+* Quản lý thanh toán
+* Quản lý khuyến mãi
+* Quản trị hệ thống
+* Quản lý đơn thuê
+
+--------------------------------
+3.3. Nhóm use case của CỔNG THANH TOÁN
+--------------------------------
+
+* Thanh toán (được Cổng thanh toán tham gia xử lý cùng với Người dùng)
+
+
+4. PHÂN RÃ CHỨC NĂNG CHI TIẾT (Phân rã chức năng.bpm)
+========================================================================
+
+Sơ đồ phân rã chức năng chia hệ thống thành 3 phân hệ lớn theo 3 tác
+nhân, sau đó phân rã tiếp từng chức năng con thành các thao tác chi
+tiết hơn. Toàn bộ cây chức năng như sau:
+
+--------------------------------
+4.1. HỆ THỐNG CHO THUÊ XE (gốc)
+--------------------------------
+  - Người dùng
+  - Hệ thống
+  - Cổng thanh toán
+
+--------------------------------
+4.2. Chi tiết phân hệ của NGƯỜI DÙNG
+--------------------------------
+  - Đăng ký
+  - Đăng nhập
+  - Tìm xe
+  - Thuê xe trực tuyến
+  - Đặt lịch lái thử
+  - Xem đơn thuê của tôi
+
+--------------------------------
+4.3. Chi tiết phân hệ của HỆ THỐNG (quản trị)
+--------------------------------
+  - Quản lý tài khoản
+  - Quản lý xe
+  - Quản lý đặt xe
+  - Quản lý thanh toán
+  - Quản lý khuyến mãi
+  - Quản lý hệ thống
+  - Quản lý đơn thuê
+
+--------------------------------
+4.4. Chi tiết phân hệ CỔNG THANH TOÁN
+--------------------------------
+  - Thanh toán
+
+--------------------------------
+4.5. Phân rã chi tiết "Đăng ký"
+--------------------------------
+  - Nhập thông tin đăng ký
+  - Tạo tài khoản
+  - Kiểm tra thông tin
+  - Xác nhận đăng ký
+
+--------------------------------
+4.6. Phân rã chi tiết "Đăng nhập"
+--------------------------------
+  - Nhập tài khoản
+  - Kiểm tra tài khoản
+  - Xác thực đăng nhập
+  - Đăng nhập mật khẩu
+  - Quên mật khẩu
+
+--------------------------------
+4.7. Phân rã chi tiết "Tìm xe"
+--------------------------------
+  - Nhập thông tin tìm xe
+  - Tìm kiếm xe
+  - Lọc xe
+  - So sánh xe
+  - Xem chi tiết xe
+
+--------------------------------
+4.8. Phân rã chi tiết "Thuê xe trực tuyến"
+--------------------------------
+  - Chọn xe
+  - Nhập thông tin thuê
+  - Chọn thời gian thuê
+  - Thanh toán
+  - Xác nhận thuê
+
+--------------------------------
+4.9. Phân rã chi tiết "Đặt lịch lái thử"
+--------------------------------
+  - Chọn xe
+  - Chọn ngày/ thời gian lái thử
+  - Nhập thông tin
+  - Xác nhận lái thử
+  - Xem lịch lái thử
+
+--------------------------------
+4.10. Phân rã chi tiết "Xem đơn thuê của tôi"
+--------------------------------
+  - Xem danh sách đơn thuê
+  - Xem chi tiết đơn thuê
+  - Theo dõi trạng thái
+  - Hủy đơn thuê
+  - Xem lịch sử thuê
+
+--------------------------------
+4.11. Phân rã chi tiết "Quản lý tài khoản" (admin)
+--------------------------------
+  - Xem danh sách tài khoản
+  - Tìm kiếm tài khoản
+  - Xem thông tin tài khoản
+  - Thêm tài khoản
+  - Sửa thông tin tài khoản
+  - Xóa tài khoản
+  - Khóa/ Mở tài khoản
+
+--------------------------------
+4.12. Phân rã chi tiết "Quản lý xe" (admin)
+--------------------------------
+  - Xem danh sách xe
+  - Tìm kiếm xe
+  - Xem chi tiết xe
+  - Thêm xe
+  - Xóa xe
+  - Sửa thông tin xe
+  - Cập nhật trạng thái xe
+
+--------------------------------
+4.13. Phân rã chi tiết "Quản lý đặt xe" (admin)
+--------------------------------
+  - Xem danh sách xe
+  - Xem chi tiết xe
+  - Kiểm tra thông tin đặt xe
+  - Xác nhận đặt xe
+  - Hủy đặt xe
+  - Cập nhật trạng thái đặt xe
+
+--------------------------------
+4.14. Phân rã chi tiết "Quản lý thanh toán" (admin)
+--------------------------------
+  - Xem danh sách thanh toán
+  - Xem chi tiết thanh toán
+  - Kiểm tra thanh toán
+  - Xác nhận thanh toán
+  - Cập nhật trạng thái thanh toán
+
+--------------------------------
+4.15. Phân rã chi tiết "Quản lý khuyến mãi" (admin)
+--------------------------------
+  - Xem danh sách khuyến mãi
+  - Thêm khuyến mãi
+  - Sửa khuyến mãi
+  - Xóa khuyến mãi
+  - Cập nhật trạng thái khuyến mãi
+
+--------------------------------
+4.16. Phân rã chi tiết "Quản lý hệ thống" (admin)
+--------------------------------
+  - Quản lý tài khoản quản trị
+  - Phân quyền người dùng
+  - Cấu hình hệ thống
+  - Sao lưu dữ liệu
+  - Theo dõi hoạt động hệ thống
+
+--------------------------------
+4.17. Phân rã chi tiết "Quản lý đơn thuê" (admin)
+--------------------------------
+  - Xem danh sách đơn thuê
+  - Xem chi tiết đơn thuê
+  - Kiểm tra thông tin đơn thuê
+  - Xác nhận đơn thuê
+  - Hủy đơn thuê
+  - Cập nhật trạng thái đơn thuê
+
+--------------------------------
+4.18. Phân rã chi tiết "Thanh toán" (cổng thanh toán)
+--------------------------------
+  - Chọn phương thức thanh toán
+  - Nhập thông tin thanh toán
+  - Kiểm tra thông tin thanh toán
+  - Thực hiện thanh toán
+  - Xác nhận thanh toán
+  - Xem lại giao dịch
+
+
+5. PHÂN LUỒNG HOẠT ĐỘNG (Activity.oom)
+========================================================================
+
+Sơ đồ activity mô tả chi tiết luồng xử lý (từng bước, từng điểm quyết
+định) của 5 chức năng chính. Dưới đây là mô tả từng luồng theo đúng
+trình tự các bước và các nhánh rẽ (quyết định) trong sơ đồ gốc.
+
+--------------------------------
+5.1. Luồng ĐĂNG KÝ
+--------------------------------
+
+1. Bắt đầu -> Hiển thị form đăng ký
+2. Nhập thông tin đăng ký
+3. Kiểm tra thông tin đăng ký
+4. Quyết định "Thông tin hợp lệ?"
+     - Nếu KHÔNG hợp lệ -> Hiển thị lại màn hình đăng ký kèm thông báo
+       lỗi -> quay lại bước Nhập thông tin đăng ký
+     - Nếu hợp lệ -> Thêm tài khoản
+5. Quyết định "Tạo tài khoản thành công?"
+     - Nếu THẤT BẠI -> Thông báo tạo tài khoản thất bại -> Kết thúc
+     - Nếu THÀNH CÔNG -> Gửi mã (xác thực)
+6. Quyết định "Gửi mã thành công?"
+     - Nếu THẤT BẠI -> Hiển thị thông báo lỗi mã -> Hiển thị màn hình
+       nhập lại mã
+     - Nếu THÀNH CÔNG -> Thông báo đăng ký tài khoản thành công
+7. Từ màn hình nhập lại mã: Nhập lại mã -> quay lại bước Gửi mã, hoặc
+   dẫn tới quyết định "Mã nhập lại hợp lệ?"
+8. Quyết định "Mã nhập lại hợp lệ?"
+     - Nếu hợp lệ -> Thông báo đăng ký tài khoản thành công -> Kết thúc
+9. Kết thúc luồng đăng ký.
+
+--------------------------------
+5.2. Luồng ĐĂNG NHẬP
+--------------------------------
+
+1. Bắt đầu -> Hiển thị login form
+2. Quyết định "Lựa chọn" (người dùng chọn đăng nhập bằng mật khẩu hay
+   quên mật khẩu)
+     - Chọn đăng nhập -> Nhập User/Pass
+     - Chọn quên mật khẩu -> Nhập lại email hoặc SĐT -> Xác thực mã
+       OTP & Đặt lại mật khẩu -> Kết thúc
+3. Nhập User/Pass -> Kiểm tra User/Pass
+4. Quyết định "Mật khẩu hợp lệ?"
+     - Nếu hợp lệ -> Đăng nhập thành công -> Kết thúc
+     - Nếu KHÔNG hợp lệ -> Thông báo sai mật khẩu -> đếm "Số lần sai"
+5. Quyết định/đếm "Số lần sai"
+     - Nếu chưa đủ số lần quy định -> quay lại Nhập User/Pass
+     - Nếu vượt quá số lần cho phép -> Khóa tài khoản & hiển thị
+       thông báo -> Kết thúc
+
+--------------------------------
+5.3. Luồng THUÊ XE TRỰC TUYẾN
+--------------------------------
+
+1. Bắt đầu -> Tìm kiếm xe
+2. Xem chi tiết xe
+3. Bấm thuê xe
+4. Quyết định "Đã đăng ký/ đăng nhập?"
+     - Nếu CHƯA -> Bắt đầu đăng nhập -> Quyết định "Hợp lệ?"
+         + Nếu hợp lệ -> Chọn ngày thuê
+         + Nếu không hợp lệ -> Đăng nhập lại -> quay lại Bắt đầu
+           đăng nhập
+     - Nếu ĐÃ đăng nhập -> Chọn ngày thuê
+5. Chọn ngày thuê -> Chọn ngày trả
+6. Kiểm tra lịch trống -> Quyết định "Còn lịch trống?"
+     - Nếu CÒN trống -> Nhập thông tin thuê
+     - Nếu KHÔNG còn trống -> Chọn ngày khác -> quay lại Chọn ngày thuê
+7. Nhập thông tin thuê -> Xác nhận thông tin
+8. Tạo đơn thuê -> Tính tổng tiền
+9. Thanh toán -> Quyết định "Thanh toán thành công?"
+     - Nếu THẤT BẠI -> Thanh toán lại -> quay lại Thanh toán
+     - Nếu THÀNH CÔNG -> Xác nhận đơn thuê
+10. Xem lại đơn thuê -> Kết thúc
+
+--------------------------------
+5.4. Luồng ĐẶT LỊCH LÁI THỬ
+--------------------------------
+
+1. Bắt đầu -> Tìm kiếm xe
+2. Xem chi tiết xe -> Bấm đặt lịch lái thử
+3. Quyết định "Đã đăng nhập?"
+     - Nếu CHƯA -> Bắt đầu đăng nhập -> Quyết định "Hợp lệ?"
+         + Nếu hợp lệ -> Chọn lịch lái thử
+         + Nếu không hợp lệ -> Đăng nhập lại -> quay lại Bắt đầu
+           đăng nhập
+     - Nếu ĐÃ đăng nhập -> Chọn lịch lái thử
+4. Chọn giờ lái thử -> Kiểm tra lịch lái thử
+5. Quyết định "Lịch còn trống?"
+     - Nếu CÒN trống -> Nhập thông tin đặt lịch
+     - Nếu KHÔNG còn trống -> Chọn ngày/ giờ khác -> quay lại Chọn
+       lịch lái thử
+6. Nhập thông tin đặt lịch -> Kiểm tra thông tin -> Xác nhận thông tin
+7. Quyết định "Thông tin hợp lệ?"
+     - Nếu KHÔNG hợp lệ -> Nhập lại thông tin -> quay lại Nhập thông
+       tin đặt lịch
+     - Nếu hợp lệ -> Tạo lịch lái thử -> Xác nhận lịch -> Kết thúc
+
+--------------------------------
+5.5. Luồng XEM ĐƠN THUÊ CỦA TÔI
+--------------------------------
+
+1. Bắt đầu -> Chọn "Đặt lịch lái thử/ Đơn thuê của tôi"
+2. Quyết định "Đã đăng nhập?"
+     - Nếu CHƯA -> Bắt đầu đăng nhập -> Quyết định "Hợp lệ?"
+         + Nếu hợp lệ -> Hiển thị danh sách đơn thuê
+         + Nếu không hợp lệ -> Đăng nhập lại -> quay lại Bắt đầu
+           đăng nhập
+     - Nếu ĐÃ đăng nhập -> Hiển thị danh sách đơn thuê
+3. Chọn đơn thuê -> Xem chi tiết đơn thuê
+4. Hiển thị thông tin đơn thuê
+5. Quyết định "Muốn hủy đơn?"
+     - Nếu KHÔNG muốn hủy -> Kết thúc
+     - Nếu MUỐN hủy -> Quyết định "Xác nhận hủy?"
+         + Nếu KHÔNG xác nhận -> Kết thúc
+         + Nếu xác nhận -> Hủy đơn thuê -> Cập nhật trạng thái đơn
+           thuê -> Hiển thị thông báo -> Kết thúc
+
+
+6. SƠ ĐỒ TUẦN TỰ THANH TOÁN (Tuần tự thanh toán.oom)
+========================================================================
+
+Sơ đồ tuần tự (sequence diagram) mô tả chi tiết luồng trao đổi giữa
+các thành phần khi Người dùng thực hiện thanh toán cho đơn thuê xe.
+
+Các thành phần tham gia (đối tượng/lifeline), theo đúng thứ tự trái
+sang phải trong sơ đồ:
+
+  1. Người dùng           - actor (khách hàng)
+  2. Giao diện thanh toán - màn hình/giao diện thanh toán (frontend)
+  3. Hệ thống xử lý       - phần xử lý nghiệp vụ phía server (backend)
+  4. csdl: datxe          - cơ sở dữ liệu, bảng "datxe" (đơn thuê)
+  5. Cổng thanh toán      - actor bên ngoài (đối tác thanh toán)
+
+Trình tự các bước xử lý (message), đánh số đúng theo sơ đồ gốc:
+
+  1.  Người dùng -> Giao diện thanh toán:
+        "Chọn phương thức & Bấm thanh toán"
+
+  2.  Giao diện thanh toán -> Hệ thống xử lý:
+        "Gửi yêu cầu thanh toán (Mã đơn, Số tiền)"
+
+  3.  Hệ thống xử lý -> Cổng thanh toán:
+        "Gọi API khởi tạo giao dịch"
+
+  4.  Cổng thanh toán --> Hệ thống xử lý (phản hồi):
+        "Trả về thông tin giao dịch (Mã QR)"
+
+  5.  Hệ thống xử lý --> Giao diện thanh toán (phản hồi):
+        "Hiển thị mã QR"
+
+  6.  Người dùng -> Cổng thanh toán:
+        "Quét mã xác thực thanh toán"
+        (Cổng thanh toán tự xử lý nội bộ: "Xử lý trừ tiền tài khoản")
+
+  7.  Cổng thanh toán -> Hệ thống xử lý:
+        "Gửi thông báo thanh toán thành công"
+
+  8.  Hệ thống xử lý -> csdl: datxe:
+        "Cập nhật trạng thái đơn (Đã hoàn thành)"
+
+  9.  Hệ thống xử lý --> Giao diện thanh toán (phản hồi):
+        "Phản hồi kết quả thành công"
+
+  10. Giao diện thanh toán --> Người dùng (phản hồi):
+        "Hiển thị thanh toán thành công"
+
+Tóm tắt: Người dùng bấm thanh toán trên giao diện -> hệ thống backend
+gửi yêu cầu khởi tạo giao dịch sang Cổng thanh toán bên ngoài -> Cổng
+thanh toán trả về mã QR để hiển thị cho người dùng quét -> sau khi
+người dùng quét mã và Cổng thanh toán xử lý trừ tiền thành công, Cổng
+thanh toán báo kết quả về hệ thống -> hệ thống cập nhật trạng thái đơn
+thuê trong CSDL thành "Đã hoàn thành" -> cuối cùng phản hồi và hiển
+thị thông báo thanh toán thành công cho người dùng.
+
+
+========================================================================
+HẾT TÀI LIỆU
+========================================================================
